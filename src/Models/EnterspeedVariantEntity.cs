@@ -3,18 +3,18 @@ using Enterspeed.Integration.Struct.Services;
 using Enterspeed.Source.Sdk.Api.Models;
 using Enterspeed.Source.Sdk.Api.Models.Properties;
 using Struct.PIM.Api.Models.Attribute;
-using Struct.PIM.Api.Models.Product;
+using Struct.PIM.Api.Models.Variant;
 
 namespace Enterspeed.Integration.Struct.Models
 {
-    public class EnterspeedProductEntity : IEnterspeedEntity
+    public class EnterspeedVariantEntity : IEnterspeedEntity
     {
-        private readonly ProductModel _value;
+        private readonly VariantModel _value;
         private readonly string _culture;
         private readonly IEntityIdentityService _entityIdentityService;
 
-        public EnterspeedProductEntity(
-            ProductModel value,
+        public EnterspeedVariantEntity(
+            VariantModel value,
             Dictionary<Attribute, dynamic> attributeValues,
             string culture,
             IEntityIdentityService entityIdentityService,
@@ -26,11 +26,11 @@ namespace Enterspeed.Integration.Struct.Models
             Properties = propertyService.GetProperties(_value, attributeValues, _culture);
         }
 
-        public string Id => _entityIdentityService.GetProductId(_value, _culture);
-        public string Type => "structProduct";
+        public string Id => _entityIdentityService.GetVariantId(_value, _culture);
+        public string Type => "structVariant";
         public string Url => null;
         public string[] Redirects => null;
-        public string ParentId => null;
+        public string ParentId => _entityIdentityService.GetProductId(_value.ProductId, _culture);
         public IDictionary<string, IEnterspeedProperty> Properties { get; }
     }
 }

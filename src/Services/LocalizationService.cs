@@ -21,7 +21,7 @@ namespace Enterspeed.Integration.Struct.Services
             if (attribute.Localized && value is JArray valueArray)
             {
                 var localizedValues = valueArray.ToObject<List<LocalizedData<T>>>();
-                var localizedValue = localizedValues.FirstOrDefault(x => x.CultureCode.Equals(culture));
+                var localizedValue = localizedValues?.FirstOrDefault(x => x.CultureCode.Equals(culture));
                 if (localizedValue != null
                     && localizedValue.Data != null
                     && !string.IsNullOrWhiteSpace(localizedValue.Data.ToString()))
@@ -35,7 +35,7 @@ namespace Enterspeed.Integration.Struct.Services
                     if (fallbackLanguage != null)
                     {
                         var fallbackLocalizedValue =
-                            localizedValues.FirstOrDefault(x => x.CultureCode.Equals(fallbackLanguage.CultureCode));
+                            localizedValues?.FirstOrDefault(x => x.CultureCode.Equals(fallbackLanguage.CultureCode));
                         if (fallbackLocalizedValue != null)
                         {
                             return fallbackLocalizedValue.Data;
