@@ -6,7 +6,10 @@ using Enterspeed.Integration.Struct.Models.Struct;
 using Enterspeed.Integration.Struct.Repository;
 using Enterspeed.Source.Sdk.Api.Services;
 using Enterspeed.Source.Sdk.Domain.Connection;
+using MoreLinq;
 using Struct.PIM.Api.Client;
+using Struct.PIM.Api.Models.Attribute;
+using Struct.PIM.Api.Models.Variant;
 
 namespace Enterspeed.Integration.Struct.Services.IngestServices
 {
@@ -17,19 +20,22 @@ namespace Enterspeed.Integration.Struct.Services.IngestServices
         private readonly IEntityIdentityService _entityIdentityService;
         private readonly IEnterspeedPropertyService _enterspeedPropertyService;
         private readonly IEnterspeedIngestService _enterspeedIngestService;
+        private readonly IStructAttributeRepository _structAttributeRepository;
 
         public VariantEnterspeedIngestService(
             StructPIMApiClient structPimApiClient,
             IStructLanguageRepository languageRepository,
             IEntityIdentityService entityIdentityService,
             IEnterspeedPropertyService enterspeedPropertyService,
-            IEnterspeedIngestService enterspeedIngestService)
+            IEnterspeedIngestService enterspeedIngestService,
+            IStructAttributeRepository structAttributeRepository)
         {
             _structPimApiClient = structPimApiClient;
             _languageRepository = languageRepository;
             _entityIdentityService = entityIdentityService;
             _enterspeedPropertyService = enterspeedPropertyService;
             _enterspeedIngestService = enterspeedIngestService;
+            _structAttributeRepository = structAttributeRepository;
         }
 
         public List<Response> Create(StructVariantsCreatedDto dto)
@@ -110,17 +116,60 @@ namespace Enterspeed.Integration.Struct.Services.IngestServices
 
             ids = ids.Distinct().ToList();
 
-            var variants = _structPimApiClient.Variants.GetVariants(ids);
+            // Struct can only handle 5000 entities, so we need to batch them
+            var variantIdBatches = ids.Batch(5000);
+            var variants = new List<VariantModel>();
+            var variantsAttributeValues = new List<VariantAttributeValuesModel>();
+
+            foreach (var variantIdBatch in variantIdBatches)
+            {
+                var variantIds = variantIdBatch.ToList();
+                var variantModels = _structPimApiClient.Variants.GetVariants(variantIds);
+                variants.AddRange(variantModels);
+
+                var attributeValuesRequestModel = new VariantValuesRequestModel
+                {
+                    VariantIds = variantIds,
+                    GlobalListValueReferencesOnly = true
+                };
+
+                variantsAttributeValues.AddRange(_structPimApiClient.Variants.GetVariantAttributeValues(attributeValuesRequestModel));
+            }
+
+            var variantsAttributeValuesDict = variantsAttributeValues.ToDictionary(x => x.VariantId, x => x.Values);
+
+            var allAttributes = _structAttributeRepository.GetAllAttributes().ToDictionary(x => x.Alias);
+
             var languages = _languageRepository.GetLanguages();
             var cultureCodes = languages.Select(x => x.CultureCode).ToList();
 
             var responses = new List<Response>();
             foreach (var variant in variants)
             {
+                var variantAttributeValues =
+                    variantsAttributeValuesDict.ContainsKey(variant.Id) ? variantsAttributeValuesDict[variant.Id] : null;
+
+                if (variantAttributeValues == null)
+                {
+                    continue;
+                }
+
+                var variantAttributes = new Dictionary<Attribute, dynamic>();
+
+                foreach (var variantAttributeValue in variantAttributeValues)
+                {
+                    if (!allAttributes.TryGetValue(variantAttributeValue.Key, out var attribute))
+                    {
+                        continue;
+                    }
+
+                    variantAttributes.Add(attribute, variantAttributeValue.Value);
+                }
+
                 foreach (var cultureCode in cultureCodes)
                 {
                     var entry =
-                        new EnterspeedVariantEntity(variant, cultureCode, _entityIdentityService, _enterspeedPropertyService);
+                        new EnterspeedVariantEntity(variant, variantAttributes, cultureCode, _entityIdentityService, _enterspeedPropertyService);
                     var response = _enterspeedIngestService.Save(entry);
 
                     if (response != null)

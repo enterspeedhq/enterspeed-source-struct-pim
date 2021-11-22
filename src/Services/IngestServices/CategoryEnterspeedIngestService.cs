@@ -6,7 +6,11 @@ using Enterspeed.Integration.Struct.Models.Struct;
 using Enterspeed.Integration.Struct.Repository;
 using Enterspeed.Source.Sdk.Api.Services;
 using Enterspeed.Source.Sdk.Domain.Connection;
+using MoreLinq;
 using Struct.PIM.Api.Client;
+using Struct.PIM.Api.Models.Attribute;
+using Struct.PIM.Api.Models.Catalogue;
+using Struct.PIM.Api.Models.Product;
 
 namespace Enterspeed.Integration.Struct.Services.IngestServices
 {
@@ -17,19 +21,22 @@ namespace Enterspeed.Integration.Struct.Services.IngestServices
         private readonly IEntityIdentityService _entityIdentityService;
         private readonly IEnterspeedPropertyService _enterspeedPropertyService;
         private readonly IEnterspeedIngestService _enterspeedIngestService;
+        private readonly IStructAttributeRepository _structAttributeRepository;
 
         public CategoryEnterspeedIngestService(
             StructPIMApiClient structPimApiClient,
             IStructLanguageRepository languageRepository,
             IEntityIdentityService entityIdentityService,
             IEnterspeedPropertyService enterspeedPropertyService,
-            IEnterspeedIngestService enterspeedIngestService)
+            IEnterspeedIngestService enterspeedIngestService,
+            IStructAttributeRepository structAttributeRepository)
         {
             _structPimApiClient = structPimApiClient;
             _languageRepository = languageRepository;
             _entityIdentityService = entityIdentityService;
             _enterspeedPropertyService = enterspeedPropertyService;
             _enterspeedIngestService = enterspeedIngestService;
+            _structAttributeRepository = structAttributeRepository;
         }
 
         public List<Response> Create(StructCategoriesCreatedDto dto)
@@ -93,9 +100,9 @@ namespace Enterspeed.Integration.Struct.Services.IngestServices
             return responses;
         }
 
-        private List<Response> CreateOrUpdate(List<int> categoryIds)
+        private List<Response> CreateOrUpdate(List<int> ids)
         {
-            if (categoryIds == null || categoryIds.Count <= 0)
+            if (ids == null || ids.Count <= 0)
             {
                 return new List<Response>
                 {
@@ -108,19 +115,62 @@ namespace Enterspeed.Integration.Struct.Services.IngestServices
                 };
             }
 
-            categoryIds = categoryIds.Distinct().ToList();
+            ids = ids.Distinct().ToList();
 
-            var categories = _structPimApiClient.Catalogues.GetCategories(categoryIds);
+            var categoryIdBatches = ids.Batch(5000);
+            var categories = new List<CategoryModel>();
+            var categoriesAttributeValues = new List<CategoryAttributeValuesModel>();
+
+
+            foreach (var categoryIdBatch in categoryIdBatches)
+            {
+                var categoryIds = categoryIdBatch.ToList();
+
+                var categoryModels = _structPimApiClient.Catalogues.GetCategories(categoryIds);
+                categories.AddRange(categoryModels);
+
+                var attributeValuesRequestModel = new CategoryValueRequestModel()
+                {
+                    CategoryIds = categoryIds,
+                    GlobalListValueReferencesOnly = true
+                };
+
+                categoriesAttributeValues.AddRange(_structPimApiClient.Catalogues.GetCategoryAttributeValues(attributeValuesRequestModel));
+            }
+
+            var categoriesAttributeValuesDict = categoriesAttributeValues.ToDictionary(x => x.CategoryId, x => x.Values);
+
             var languages = _languageRepository.GetLanguages();
             var cultureCodes = languages.Select(x => x.CultureCode).ToList();
+            var allAttributes = _structAttributeRepository.GetAllAttributes().ToDictionary(x => x.Alias);
 
             var responses = new List<Response>();
             foreach (var category in categories)
             {
+                var categoryAttributeValues =
+                    categoriesAttributeValuesDict.ContainsKey(category.Id) ? categoriesAttributeValuesDict[category.Id] : null;
+
+                if (categoryAttributeValues == null)
+                {
+                    continue;
+                }
+
+                var categoryAttributes = new Dictionary<Attribute, dynamic>();
+
+                foreach (var categoryAttributeValue in categoryAttributeValues)
+                {
+                    if (!allAttributes.TryGetValue(categoryAttributeValue.Key, out var attribute))
+                    {
+                        continue;
+                    }
+
+                    categoryAttributes.Add(attribute, categoryAttributeValue.Value);
+                }
+
                 foreach (var cultureCode in cultureCodes)
                 {
                     var entry =
-                        new EnterspeedCategoryEntity(category, cultureCode, _entityIdentityService, _enterspeedPropertyService);
+                        new EnterspeedCategoryEntity(category, categoryAttributes, cultureCode, _entityIdentityService, _enterspeedPropertyService);
                     var response = _enterspeedIngestService.Save(entry);
 
                     if (response != null)

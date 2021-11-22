@@ -5,7 +5,9 @@ using Enterspeed.Integration.Struct.Models;
 using Enterspeed.Integration.Struct.Models.Struct;
 using Enterspeed.Source.Sdk.Api.Services;
 using Enterspeed.Source.Sdk.Domain.Connection;
+using MoreLinq;
 using Struct.PIM.Api.Client;
+using Struct.PIM.Api.Models.Asset;
 
 namespace Enterspeed.Integration.Struct.Services.IngestServices
 {
@@ -99,7 +101,15 @@ namespace Enterspeed.Integration.Struct.Services.IngestServices
             }
 
             ids = ids.Distinct().ToList();
-            var assets = _structPimApiClient.Assets.GetAssets(ids);
+
+            // Struct can only handle 5000 entities, so we need to batch them
+            var assetIdBatches = ids.Batch(5000);
+            var assets = new List<AssetModel>();
+
+            foreach (var assetIdBatch in assetIdBatches)
+            {
+                assets.AddRange(_structPimApiClient.Assets.GetAssets(assetIdBatch.ToList()));
+            }
 
             var responses = new List<Response>();
             foreach (var asset in assets)

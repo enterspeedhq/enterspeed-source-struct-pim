@@ -35,7 +35,7 @@ namespace Enterspeed.Integration.Struct.Controllers
         }
 
         [FunctionName("StructWebhooks")]
-        public IActionResult Run([HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = null)] HttpRequestMessage req, ILogger log)
+        public IActionResult Handle([HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = null)] HttpRequestMessage req, ILogger log)
         {
             if (!req.Headers.TryGetValues(WebhookConstants.EventHeaderKey, out var eventTypeValues))
             {

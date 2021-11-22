@@ -2,6 +2,7 @@
 using Enterspeed.Integration.Struct.Services;
 using Enterspeed.Source.Sdk.Api.Models;
 using Enterspeed.Source.Sdk.Api.Models.Properties;
+using Struct.PIM.Api.Models.Attribute;
 using Struct.PIM.Api.Models.Product;
 
 namespace Enterspeed.Integration.Struct.Models
@@ -14,6 +15,7 @@ namespace Enterspeed.Integration.Struct.Models
 
         public EnterspeedProductEntity(
             ProductModel value,
+            Dictionary<Attribute, dynamic> attributeValues,
             string culture,
             IEntityIdentityService entityIdentityService,
             IEnterspeedPropertyService propertyService)
@@ -21,7 +23,7 @@ namespace Enterspeed.Integration.Struct.Models
             _value = value;
             _culture = culture;
             _entityIdentityService = entityIdentityService;
-            Properties = propertyService.GetProperties(_value, _culture);
+            Properties = propertyService.GetProperties(_value, attributeValues, _culture);
         }
 
         public string Id => _entityIdentityService.GetProductId(_value, _culture);

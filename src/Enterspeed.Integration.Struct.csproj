@@ -4,14 +4,15 @@
     <AzureFunctionsVersion>v3</AzureFunctionsVersion>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Enterspeed.Source.Sdk" Version="0.4.1" />
+    <PackageReference Include="Enterspeed.Source.Sdk" Version="0.5.0" />
     <PackageReference Include="Microsoft.Azure.Functions.Extensions" Version="1.1.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="5.0.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="5.0.2" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="5.0.0" />
     <PackageReference Include="Microsoft.NET.Sdk.Functions" Version="3.0.11" />
-    <PackageReference Include="Struct.PIM.Api.Client" Version="3.6.0" />
-    <PackageReference Include="Struct.PIM.Api.Models" Version="3.6.0" />
+    <PackageReference Include="morelinq" Version="3.3.2" />
+    <PackageReference Include="Struct.PIM.Api.Client" Version="3.7.0" />
+    <PackageReference Include="Struct.PIM.Api.Models" Version="3.7.0" />
     <PackageReference Include="System.Text.Encodings.Web" Version="5.0.1" />
   </ItemGroup>
   <ItemGroup>

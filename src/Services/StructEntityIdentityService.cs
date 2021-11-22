@@ -11,7 +11,7 @@ namespace Enterspeed.Integration.Struct.Services
     {
         public string GetGlobalListvValueId(GlobalListValue value, string culture)
         {
-            return GetId(value.Uid, culture);
+            return $"globallistvalue-{GetId(value.Uid, culture)}";
         }
 
         public string GetAssetId(AssetModel asset)
@@ -26,7 +26,7 @@ namespace Enterspeed.Integration.Struct.Services
 
         public string GetAssetId(string id)
         {
-            return id;
+            return $"asset-{id}";
         }
 
         public string GetProductId(ProductModel product, string culture)
@@ -36,7 +36,7 @@ namespace Enterspeed.Integration.Struct.Services
 
         public string GetProductId(int productId, string culture)
         {
-            return GetId(productId, culture);
+            return $"product-{GetId(productId, culture)}";
         }
 
         public string GetVariantId(VariantModel variant, string culture)
@@ -46,7 +46,7 @@ namespace Enterspeed.Integration.Struct.Services
 
         public string GetVariantId(int variantId, string culture)
         {
-            return GetId(variantId, culture);
+            return $"variant-{GetId(variantId, culture)}";
         }
 
         public string GetCategoryId(CategoryModel category, string culture)
@@ -56,7 +56,7 @@ namespace Enterspeed.Integration.Struct.Services
 
         public string GetCategoryId(int categoryId, string culture)
         {
-            return GetId(categoryId, culture);
+            return $"category-{GetId(categoryId, culture)}";
         }
 
         public string GetId(int id, string culture = null)
@@ -65,7 +65,7 @@ namespace Enterspeed.Integration.Struct.Services
             {
                 return id.ToString();
             }
-            
+
             return $"{id}-{culture}";
         }
 

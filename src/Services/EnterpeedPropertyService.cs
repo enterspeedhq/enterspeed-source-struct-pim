@@ -6,7 +6,6 @@ using Enterspeed.Integration.Struct.Repository;
 using Enterspeed.Integration.Struct.Services.StructAttributes;
 using Enterspeed.Source.Sdk.Api.Models.Properties;
 using Microsoft.Extensions.DependencyInjection;
-using Newtonsoft.Json.Linq;
 using Struct.PIM.Api.Client;
 using Struct.PIM.Api.Models.Asset;
 using Struct.PIM.Api.Models.Catalogue;
@@ -64,9 +63,9 @@ namespace Enterspeed.Integration.Struct.Services
             return output;
         }
 
-        public IDictionary<string, IEnterspeedProperty> GetProperties(ProductModel product, string culture)
+        public IDictionary<string, IEnterspeedProperty> GetProperties(ProductModel product, Dictionary<Attribute, dynamic> attributeValues, string culture)
         {
-            if (product == null)
+            if (product == null || attributeValues == null || attributeValues.Count <= 0)
             {
                 return new Dictionary<string, IEnterspeedProperty>();
             }
@@ -88,7 +87,7 @@ namespace Enterspeed.Integration.Struct.Services
 
             var output = new Dictionary<string, IEnterspeedProperty>();
 
-            foreach (var productAttribute in productAttributes)
+            foreach (var productAttribute in attributeValues)
             {
                 Dictionary<string, IEnterspeedProperty> properties = GetProperties(productAttribute.Key, productAttribute.Value, culture, true);
                 if (properties == null)
@@ -107,44 +106,16 @@ namespace Enterspeed.Integration.Struct.Services
             return output;
         }
 
-        public IDictionary<string, IEnterspeedProperty> GetProperties(VariantModel variant, string culture)
+        public IDictionary<string, IEnterspeedProperty> GetProperties(VariantModel variant, Dictionary<Attribute, dynamic> attributeValues, string culture)
         {
-            if (variant == null)
+            if (variant == null || attributeValues == null || attributeValues.Count <= 0)
             {
                 return new Dictionary<string, IEnterspeedProperty>();
             }
 
-            var variantAttributeValuesWithReferences = _structPimApiClient.Variants.GetVariantAttributeValues(variant.Id, true).Values;
-            var variantAttributeValues = _structPimApiClient.Variants.GetVariantAttributeValues(variant.Id, false).Values;
-            var allAttributes = _structAttributeRepository.GetAllAttributes();
-            var allAttributesDictionary = allAttributes.ToDictionary(x => x.Alias);
-
-            var variantAttributesWithReferences = new Dictionary<Attribute, dynamic>();
-            var variantAttributes = new Dictionary<Attribute, dynamic>();
-
-            foreach (var variantAttributeValue in variantAttributeValuesWithReferences)
-            {
-                if (!allAttributesDictionary.TryGetValue(variantAttributeValue.Key, out var attribute))
-                {
-                    continue;
-                }
-
-                variantAttributesWithReferences.Add(attribute, variantAttributeValue.Value);
-            }
-
-            foreach (var variantAttributeValue in variantAttributeValues)
-            {
-                if (!allAttributesDictionary.TryGetValue(variantAttributeValue.Key, out var attribute))
-                {
-                    continue;
-                }
-
-                variantAttributes.Add(attribute, variantAttributeValue.Value);
-            }
-
             var output = new Dictionary<string, IEnterspeedProperty>();
 
-            foreach (var variantAttribute in variantAttributesWithReferences)
+            foreach (var variantAttribute in attributeValues)
             {
                 Dictionary<string, IEnterspeedProperty> properties = GetProperties(variantAttribute.Key, variantAttribute.Value, culture, true);
                 if (properties == null)
@@ -158,36 +129,21 @@ namespace Enterspeed.Integration.Struct.Services
                 }
             }
 
-            output["metaData"] = CreateMetaData(variant, culture, variantAttributes);
+            output["metaData"] = CreateMetaData(variant, culture);
 
             return output;
         }
 
-        public IDictionary<string, IEnterspeedProperty> GetProperties(CategoryModel category, string culture)
+        public IDictionary<string, IEnterspeedProperty> GetProperties(CategoryModel category, Dictionary<Attribute, dynamic> attributeValues, string culture)
         {
-            if (category == null)
+            if (category == null || attributeValues == null || attributeValues.Count <= 0)
             {
                 return new Dictionary<string, IEnterspeedProperty>();
             }
-
-            var categoryAttributeValues = _structPimApiClient.Catalogues.GetCategoryAttributeValues(category.Id, true).Values;
-            var allAttributes = _structAttributeRepository.GetAllAttributes().ToDictionary(x => x.Alias);
-
-            var categoryAttributes = new Dictionary<Attribute, dynamic>();
-
-            foreach (var categoryAttributeValue in categoryAttributeValues)
-            {
-                if (!allAttributes.TryGetValue(categoryAttributeValue.Key, out var attribute))
-                {
-                    continue;
-                }
-
-                categoryAttributes.Add(attribute, categoryAttributeValue.Value);
-            }
-
+            
             var output = new Dictionary<string, IEnterspeedProperty>();
 
-            foreach (var categoryAttribute in categoryAttributes)
+            foreach (var categoryAttribute in attributeValues)
             {
                 Dictionary<string, IEnterspeedProperty> properties = GetProperties(categoryAttribute.Key, categoryAttribute.Value, culture, true);
                 if (properties == null)
@@ -206,18 +162,13 @@ namespace Enterspeed.Integration.Struct.Services
             return output;
         }
 
-        private IEnterspeedProperty CreateMetaData(Attribute attribute)
-        {
-            var metaData = new Dictionary<string, IEnterspeedProperty>
-            {
-                ["attributeType"] = new StringEnterspeedProperty("attributeType", attribute.AttributeType),
-            };
-
-            return new ObjectEnterspeedProperty("metaData", metaData);
-        }
-
         private IEnterspeedProperty CreateMetaData(ProductModel product, string culture)
         {
+            if (!product.Name.TryGetValue(culture, out var displayName))
+            {
+                displayName = string.Empty;
+            }
+
             var metaData = new Dictionary<string, IEnterspeedProperty>
             {
                 ["createdBy"] = new StringEnterspeedProperty(product.CreatedBy),
@@ -229,16 +180,19 @@ namespace Enterspeed.Integration.Struct.Services
                 ["isArchived"] = new BooleanEnterspeedProperty(product.IsArchived),
                 ["lastModified"] = new StringEnterspeedProperty(product.LastModified.ToString(CultureInfo.InvariantCulture)),
                 ["productStructureUid"] = new StringEnterspeedProperty(product.ProductStructureUid.ToString()),
-                ["variationDefinitionUid"] = new StringEnterspeedProperty(product.VariationDefinitionUid.HasValue ? product.VariationDefinitionUid.ToString() : string.Empty)
-
+                ["variationDefinitionUid"] = new StringEnterspeedProperty(product.VariationDefinitionUid.HasValue ? product.VariationDefinitionUid.ToString() : string.Empty),
+                ["displayName"] = new StringEnterspeedProperty(displayName),
             };
 
             return new ObjectEnterspeedProperty("metaData", metaData);
         }
 
-        private IEnterspeedProperty CreateMetaData(VariantModel variant, string culture, Dictionary<Attribute, dynamic> variantAttributes)
+        private IEnterspeedProperty CreateMetaData(VariantModel variant, string culture)
         {
-            var displayName = variant.Id.ToString(); // TOOD
+            if (!variant.Name.TryGetValue(culture, out var displayName))
+            {
+                displayName = string.Empty;
+            }
 
             var metaData = new Dictionary<string, IEnterspeedProperty>
             {
@@ -260,6 +214,11 @@ namespace Enterspeed.Integration.Struct.Services
 
         private IEnterspeedProperty CreateMetaData(CategoryModel category, string culture)
         {
+            if (!category.Name.TryGetValue(culture, out var displayName))
+            {
+                displayName = string.Empty;
+            }
+
             var metaData = new Dictionary<string, IEnterspeedProperty>
             {
                 ["createdBy"] = new StringEnterspeedProperty(category.CreatedBy),
@@ -269,6 +228,7 @@ namespace Enterspeed.Integration.Struct.Services
                 ["id"] = new StringEnterspeedProperty(category.Id.ToString()),
                 ["hasChildren"] = new BooleanEnterspeedProperty(category.HasChildren),
                 ["lastModified"] = new StringEnterspeedProperty(category.LastModified.ToString(CultureInfo.InvariantCulture)),
+                ["displayName"] = new StringEnterspeedProperty(displayName),
             };
 
             return new ObjectEnterspeedProperty("metaData", metaData);

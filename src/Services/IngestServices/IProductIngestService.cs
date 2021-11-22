@@ -11,6 +11,6 @@ namespace Enterspeed.Integration.Struct.Services.IngestServices
         List<Response> Update(StructProductsUpdatedDto productsUpdatedDto);
         List<Response> Update(List<int> productIds);
         List<Response> Delete(StructProductsDeletedDto productsDeletedDto);
-        List<Response> Delete(List<int> productIds);
+        List<Response> Delete(List<int> ids);
     }
 }

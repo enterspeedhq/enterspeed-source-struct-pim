@@ -42,7 +42,7 @@ namespace Enterspeed.Integration.Struct.Services.StructAttributes.StructValueCon
 
                 if (referencedValue)
                 {
-                    List<string> localizedValues = _localizationService.GetLocalizedValue<List<string>>(fixedListAttribute.ReferencedAttribute, value, culture);
+                    List<string> localizedValues = _localizationService.GetLocalizedValue<List<string>>(fixedListAttribute, value, culture);
                     if (localizedValues != null)
                     {
                         foreach (var localizedValue in localizedValues)
