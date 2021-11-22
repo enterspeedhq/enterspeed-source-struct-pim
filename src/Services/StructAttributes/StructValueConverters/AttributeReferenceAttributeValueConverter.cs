@@ -24,13 +24,13 @@ namespace Enterspeed.Integration.Struct.Services.StructAttributes.StructValueCon
 
         public IDictionary<string, IEnterspeedProperty> Convert(Attribute attribute, dynamic value, string culture, bool referencedValue)
         {
-            if (!(attribute is AttributeReferenceAttribute collectionReferenceAttribute))
+            if (!(attribute is AttributeReferenceAttribute attributeReferenceAttribute))
             {
                 return null;
             }
 
             var output = new Dictionary<string, IEnterspeedProperty>();
-            if (collectionReferenceAttribute.AllowMultipleValues)
+            if (attributeReferenceAttribute.AllowMultipleValues)
             {
                 List<AttributeReference> references =
                     _localizationService.GetLocalizedValue<List<AttributeReference>>(attribute, value, culture);

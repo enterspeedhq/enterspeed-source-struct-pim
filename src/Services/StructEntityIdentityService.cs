@@ -1,7 +1,9 @@
 ﻿using System;
 using Struct.PIM.Api.Models.Asset;
+using Struct.PIM.Api.Models.Catalogue;
 using Struct.PIM.Api.Models.GlobalList;
 using Struct.PIM.Api.Models.Product;
+using Struct.PIM.Api.Models.Variant;
 
 namespace Enterspeed.Integration.Struct.Services
 {
@@ -29,7 +31,32 @@ namespace Enterspeed.Integration.Struct.Services
 
         public string GetProductId(ProductModel product, string culture)
         {
-            return GetId(product.Id, culture);
+            return GetProductId(product.Id, culture);
+        }
+
+        public string GetProductId(int productId, string culture)
+        {
+            return GetId(productId, culture);
+        }
+
+        public string GetVariantId(VariantModel variant, string culture)
+        {
+            return GetVariantId(variant.Id, culture);
+        }
+
+        public string GetVariantId(int variantId, string culture)
+        {
+            return GetId(variantId, culture);
+        }
+
+        public string GetCategoryId(CategoryModel category, string culture)
+        {
+            return GetCategoryId(category.Id, culture);
+        }
+
+        public string GetCategoryId(int categoryId, string culture)
+        {
+            return GetId(categoryId, culture);
         }
 
         public string GetId(int id, string culture = null)

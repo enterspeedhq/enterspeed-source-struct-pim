@@ -85,8 +85,13 @@ namespace Enterspeed.Integration.Struct.Services.StructAttributes.StructValueCon
                     var localizedValue =
                         _localizationService.GetLocalizedValue<dynamic>(fixedListAttribute.ReferencedAttribute, value,
                             culture);
-                    var subAttributeProperties = propertyService.GetProperties(fixedListAttribute.ReferencedAttribute,
-                        localizedValue, culture, referencedValue);
+
+                    var subAttributeProperties = propertyService.GetProperties(
+                        fixedListAttribute.ReferencedAttribute,
+                        localizedValue,
+                        culture,
+                        referencedValue);
+
                     if (subAttributeProperties != null)
                     {
                         var itemProperties = new Dictionary<string, IEnterspeedProperty>();
