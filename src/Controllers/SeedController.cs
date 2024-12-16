@@ -10,6 +10,7 @@ using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Extensions.Logging;
 using Struct.PIM.Api.Client;
+using Struct.PIM.Api.Models.GlobalList;
 
 namespace Enterspeed.Integration.Struct.Controllers
 {
@@ -173,7 +174,17 @@ namespace Enterspeed.Integration.Struct.Controllers
             var allGlobalListValues = new List<StructGlobalListValueDto>();
             foreach (var globalList in allGlobalLists)
             {
-                var globalListValuesResult = _structPimApiClient.GlobalLists.GetGlobalListValues(globalList.Uid);
+                GlobalListValueResultSet globalListValuesResult;
+                try
+                {
+                    globalListValuesResult = _structPimApiClient.GlobalLists.GetGlobalListValues(globalList.Uid);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"Failed to load global list values for list id: ${globalList.Id}");
+                    Console.WriteLine(e);
+                    continue;
+                }
                 if (globalListValuesResult != null)
                 {
                     allGlobalListValues.AddRange(globalListValuesResult.GlobalListValues.Select(x =>

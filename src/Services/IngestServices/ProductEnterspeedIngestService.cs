@@ -50,7 +50,7 @@ namespace Enterspeed.Integration.Struct.Services.IngestServices
 
         public List<Response> Update(StructProductsUpdatedDto productsUpdatedDto)
         {
-            return Update(productsUpdatedDto?.ProductChanges?.Select(x => x.Id).ToList());
+            return Update(productsUpdatedDto?.ProductIds);
         }
 
         public List<Response> Update(List<int> productIds)
