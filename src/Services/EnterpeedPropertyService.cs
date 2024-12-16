@@ -8,7 +8,9 @@ using Enterspeed.Source.Sdk.Api.Models.Properties;
 using Microsoft.Extensions.DependencyInjection;
 using Struct.PIM.Api.Client;
 using Struct.PIM.Api.Models.Asset;
+using Struct.PIM.Api.Models.Catalogue;
 using Struct.PIM.Api.Models.Product;
+using Struct.PIM.Api.Models.Variant;
 using Attribute = Struct.PIM.Api.Models.Attribute.Attribute;
 
 namespace Enterspeed.Integration.Struct.Services
@@ -61,9 +63,9 @@ namespace Enterspeed.Integration.Struct.Services
             return output;
         }
 
-        public IDictionary<string, IEnterspeedProperty> GetProperties(ProductModel product, string culture)
+        public IDictionary<string, IEnterspeedProperty> GetProperties(ProductModel product, Dictionary<Attribute, dynamic> attributeValues, string culture)
         {
-            if (product == null)
+            if (product == null || attributeValues == null || attributeValues.Count <= 0)
             {
                 return new Dictionary<string, IEnterspeedProperty>();
             }
@@ -85,7 +87,7 @@ namespace Enterspeed.Integration.Struct.Services
 
             var output = new Dictionary<string, IEnterspeedProperty>();
 
-            foreach (var productAttribute in productAttributes)
+            foreach (var productAttribute in attributeValues)
             {
                 Dictionary<string, IEnterspeedProperty> properties = GetProperties(productAttribute.Key, productAttribute.Value, culture, true);
                 if (properties == null)
@@ -99,14 +101,134 @@ namespace Enterspeed.Integration.Struct.Services
                 }
             }
 
+            output["metaData"] = CreateMetaData(product, culture);
+
             return output;
         }
 
-        private IEnterspeedProperty CreateMetaData(Attribute attribute)
+        public IDictionary<string, IEnterspeedProperty> GetProperties(VariantModel variant, Dictionary<Attribute, dynamic> attributeValues, string culture)
         {
+            if (variant == null || attributeValues == null || attributeValues.Count <= 0)
+            {
+                return new Dictionary<string, IEnterspeedProperty>();
+            }
+
+            var output = new Dictionary<string, IEnterspeedProperty>();
+
+            foreach (var variantAttribute in attributeValues)
+            {
+                Dictionary<string, IEnterspeedProperty> properties = GetProperties(variantAttribute.Key, variantAttribute.Value, culture, true);
+                if (properties == null)
+                {
+                    continue;
+                }
+
+                foreach (var property in properties)
+                {
+                    output[property.Key] = property.Value;
+                }
+            }
+
+            output["metaData"] = CreateMetaData(variant, culture);
+
+            return output;
+        }
+
+        public IDictionary<string, IEnterspeedProperty> GetProperties(CategoryModel category, Dictionary<Attribute, dynamic> attributeValues, string culture)
+        {
+            if (category == null || attributeValues == null || attributeValues.Count <= 0)
+            {
+                return new Dictionary<string, IEnterspeedProperty>();
+            }
+            
+            var output = new Dictionary<string, IEnterspeedProperty>();
+
+            foreach (var categoryAttribute in attributeValues)
+            {
+                Dictionary<string, IEnterspeedProperty> properties = GetProperties(categoryAttribute.Key, categoryAttribute.Value, culture, true);
+                if (properties == null)
+                {
+                    continue;
+                }
+
+                foreach (var property in properties)
+                {
+                    output[property.Key] = property.Value;
+                }
+            }
+
+            output["metaData"] = CreateMetaData(category, culture);
+
+            return output;
+        }
+
+        private IEnterspeedProperty CreateMetaData(ProductModel product, string culture)
+        {
+            if (!product.Name.TryGetValue(culture, out var displayName))
+            {
+                displayName = string.Empty;
+            }
+
             var metaData = new Dictionary<string, IEnterspeedProperty>
             {
-                ["attributeType"] = new StringEnterspeedProperty("attributeType", attribute.AttributeType),
+                ["createdBy"] = new StringEnterspeedProperty(product.CreatedBy),
+                ["culture"] = new StringEnterspeedProperty(culture),
+                ["lastModifiedBy"] = new StringEnterspeedProperty(product.LastModifiedBy),
+                ["archiveReason"] = new StringEnterspeedProperty(product.ArchiveReason.HasValue ? product.ArchiveReason.ToString() : string.Empty),
+                ["created"] = new StringEnterspeedProperty(product.Created.ToString(CultureInfo.InvariantCulture)),
+                ["id"] = new StringEnterspeedProperty(product.Id.ToString()),
+                ["isArchived"] = new BooleanEnterspeedProperty(product.IsArchived),
+                ["lastModified"] = new StringEnterspeedProperty(product.LastModified.ToString(CultureInfo.InvariantCulture)),
+                ["productStructureUid"] = new StringEnterspeedProperty(product.ProductStructureUid.ToString()),
+                ["variationDefinitionUid"] = new StringEnterspeedProperty(product.VariationDefinitionUid.HasValue ? product.VariationDefinitionUid.ToString() : string.Empty),
+                ["displayName"] = new StringEnterspeedProperty(displayName),
+            };
+
+            return new ObjectEnterspeedProperty("metaData", metaData);
+        }
+
+        private IEnterspeedProperty CreateMetaData(VariantModel variant, string culture)
+        {
+            if (!variant.Name.TryGetValue(culture, out var displayName))
+            {
+                displayName = string.Empty;
+            }
+
+            var metaData = new Dictionary<string, IEnterspeedProperty>
+            {
+                ["createdBy"] = new StringEnterspeedProperty(variant.CreatedBy),
+                ["culture"] = new StringEnterspeedProperty(culture),
+                ["lastModifiedBy"] = new StringEnterspeedProperty(variant.LastModifiedBy),
+                ["archiveReason"] = new StringEnterspeedProperty(variant.ArchiveReason.HasValue ? variant.ArchiveReason.ToString() : string.Empty),
+                ["created"] = new StringEnterspeedProperty(variant.Created.ToString(CultureInfo.InvariantCulture)),
+                ["id"] = new StringEnterspeedProperty(variant.Id.ToString()),
+                ["isArchived"] = new BooleanEnterspeedProperty(variant.IsArchived),
+                ["lastModified"] = new StringEnterspeedProperty(variant.LastModified.ToString(CultureInfo.InvariantCulture)),
+                ["productStructureUid"] = new StringEnterspeedProperty(variant.ProductStructureUid.ToString()),
+                ["displayName"] = new StringEnterspeedProperty(displayName),
+
+            };
+
+            return new ObjectEnterspeedProperty("metaData", metaData);
+        }
+
+        private IEnterspeedProperty CreateMetaData(CategoryModel category, string culture)
+        {
+            if (!category.Name.TryGetValue(culture, out var displayName))
+            {
+                displayName = string.Empty;
+            }
+
+            var metaData = new Dictionary<string, IEnterspeedProperty>
+            {
+                ["createdBy"] = new StringEnterspeedProperty(category.CreatedBy),
+                ["culture"] = new StringEnterspeedProperty(culture),
+                ["lastModifiedBy"] = new StringEnterspeedProperty(category.LastModifiedBy),
+                ["created"] = new StringEnterspeedProperty(category.Created.ToString(CultureInfo.InvariantCulture)),
+                ["id"] = new StringEnterspeedProperty(category.Id.ToString()),
+                ["hasChildren"] = new BooleanEnterspeedProperty(category.HasChildren),
+                ["lastModified"] = new StringEnterspeedProperty(category.LastModified.ToString(CultureInfo.InvariantCulture)),
+                ["displayName"] = new StringEnterspeedProperty(displayName),
             };
 
             return new ObjectEnterspeedProperty("metaData", metaData);

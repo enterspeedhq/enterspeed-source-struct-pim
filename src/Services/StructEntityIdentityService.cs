@@ -1,7 +1,9 @@
 ﻿using System;
 using Struct.PIM.Api.Models.Asset;
+using Struct.PIM.Api.Models.Catalogue;
 using Struct.PIM.Api.Models.GlobalList;
 using Struct.PIM.Api.Models.Product;
+using Struct.PIM.Api.Models.Variant;
 
 namespace Enterspeed.Integration.Struct.Services
 {
@@ -9,7 +11,7 @@ namespace Enterspeed.Integration.Struct.Services
     {
         public string GetGlobalListvValueId(GlobalListValue value, string culture)
         {
-            return GetId(value.Uid, culture);
+            return $"globallistvalue-{GetId(value.Uid, culture)}";
         }
 
         public string GetAssetId(AssetModel asset)
@@ -24,12 +26,37 @@ namespace Enterspeed.Integration.Struct.Services
 
         public string GetAssetId(string id)
         {
-            return id;
+            return $"asset-{id}";
         }
 
         public string GetProductId(ProductModel product, string culture)
         {
-            return GetId(product.Id, culture);
+            return GetProductId(product.Id, culture);
+        }
+
+        public string GetProductId(int productId, string culture)
+        {
+            return $"product-{GetId(productId, culture)}";
+        }
+
+        public string GetVariantId(VariantModel variant, string culture)
+        {
+            return GetVariantId(variant.Id, culture);
+        }
+
+        public string GetVariantId(int variantId, string culture)
+        {
+            return $"variant-{GetId(variantId, culture)}";
+        }
+
+        public string GetCategoryId(CategoryModel category, string culture)
+        {
+            return GetCategoryId(category.Id, culture);
+        }
+
+        public string GetCategoryId(int categoryId, string culture)
+        {
+            return $"category-{GetId(categoryId, culture)}";
         }
 
         public string GetId(int id, string culture = null)
@@ -38,7 +65,7 @@ namespace Enterspeed.Integration.Struct.Services
             {
                 return id.ToString();
             }
-            
+
             return $"{id}-{culture}";
         }
 

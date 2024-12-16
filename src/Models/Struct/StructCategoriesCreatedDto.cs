@@ -2,8 +2,8 @@
 
 namespace Enterspeed.Integration.Struct.Models.Struct
 {
-    public class StructProductsUpdatedDto
+    public class StructCategoriesCreatedDto
     {
-        public List<int> ProductIds { get; set; }
+        public List<int> CategoryIds { get; set; }
     }
 }

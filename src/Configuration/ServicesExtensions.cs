@@ -3,6 +3,7 @@ using Enterspeed.Integration.Struct.Models.Configuration;
 using Enterspeed.Integration.Struct.Providers;
 using Enterspeed.Integration.Struct.Repository;
 using Enterspeed.Integration.Struct.Services;
+using Enterspeed.Integration.Struct.Services.IngestServices;
 using Enterspeed.Integration.Struct.Services.StructAttributes;
 using Enterspeed.Source.Sdk.Api.Connection;
 using Enterspeed.Source.Sdk.Api.Providers;
@@ -55,6 +56,13 @@ namespace Enterspeed.Integration.Struct.Configuration
             serviceCollection.AddScoped<IStructAssetRepository, StructAssetRepository>();
             serviceCollection.AddScoped<IStructLanguageRepository, StructLanguageRepository>();
             serviceCollection.AddScoped<IStructAttributeRepository, StructAttributeRepository>();
+
+            // Ingest services
+            serviceCollection.AddScoped<IGlobalListIngestService, GlobalListEnterspeedIngestService>();
+            serviceCollection.AddScoped<IAssetIngestService, AssetEnterspeedIngestService>();
+            serviceCollection.AddScoped<IProductIngestService, ProductEnterspeedIngestService>();
+            serviceCollection.AddScoped<IVariantIngestService, VariantEnterspeedIngestService>();
+            serviceCollection.AddScoped<ICategoryIngestService, CategoryEnterspeedIngestService>();
         }
     }
 }
