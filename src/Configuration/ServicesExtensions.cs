@@ -46,7 +46,7 @@ namespace Enterspeed.Integration.Struct.Configuration
             }
 
             serviceCollection.AddScoped<IEntityIdentityService, StructEntityIdentityService>();
-            serviceCollection.AddScoped<IEnterspeedPropertyService, EnterpeedPropertyService>();
+            serviceCollection.AddScoped<IEnterspeedPropertyService, EnterspeedPropertyService>();
             serviceCollection.AddScoped<IEnterspeedIngestService, EnterspeedIngestService>();
             serviceCollection.AddScoped<IEnterspeedIngestService, EnterspeedIngestService>();
             serviceCollection.AddScoped<IJsonSerializer, SystemTextJsonSerializer>();

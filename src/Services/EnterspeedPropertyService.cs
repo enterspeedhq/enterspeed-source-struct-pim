@@ -15,14 +15,14 @@ using Attribute = Struct.PIM.Api.Models.Attribute.Attribute;
 
 namespace Enterspeed.Integration.Struct.Services
 {
-    public class EnterpeedPropertyService : IEnterspeedPropertyService
+    public class EnterspeedPropertyService : IEnterspeedPropertyService
     {
         private readonly IEnumerable<IStructAttributeValueConverter> _valueConverters;
         private readonly IEntityIdentityService _entityIdentityService;
         private readonly StructPIMApiClient _structPimApiClient;
         private readonly IStructAttributeRepository _structAttributeRepository;
 
-        public EnterpeedPropertyService(
+        public EnterspeedPropertyService(
             IServiceProvider serviceProvider,
             IEntityIdentityService entityIdentityService,
             StructPIMApiClient structPimApiClient,
@@ -49,17 +49,18 @@ namespace Enterspeed.Integration.Struct.Services
 
             return convertedValue;
         }
-
         public IDictionary<string, IEnterspeedProperty> GetProperties(AssetModel asset)
         {
-            var output = new Dictionary<string, IEnterspeedProperty>();
-            output.Add("id", new StringEnterspeedProperty(_entityIdentityService.GetAssetId(asset)));
-            output.Add("name", new StringEnterspeedProperty(asset.Name));
-            output.Add("url", new StringEnterspeedProperty(asset.Url));
-            output.Add("extension", new StringEnterspeedProperty(asset.Extension));
-            output.Add("fileType", new StringEnterspeedProperty(asset.FileType));
-            output.Add("created", new StringEnterspeedProperty(asset.Created.ToString(CultureInfo.InvariantCulture)));
-            output.Add("lastModified", new StringEnterspeedProperty(asset.LastModified.ToString(CultureInfo.InvariantCulture)));
+            var output = new Dictionary<string, IEnterspeedProperty>
+            {
+                { "id", new StringEnterspeedProperty(_entityIdentityService.GetAssetId(asset)) },
+                { "name", new StringEnterspeedProperty(asset.Name) },
+                { "url", new StringEnterspeedProperty(asset.Url) },
+                { "extension", new StringEnterspeedProperty(asset.Extension) },
+                { "fileType", new StringEnterspeedProperty(asset.FileType) },
+                { "created", new StringEnterspeedProperty(asset.Created.ToString(CultureInfo.InvariantCulture)) },
+                { "lastModified", new StringEnterspeedProperty(asset.LastModified.ToString(CultureInfo.InvariantCulture)) }
+            };
             return output;
         }
 
@@ -71,6 +72,7 @@ namespace Enterspeed.Integration.Struct.Services
             }
 
             var productAttributeValues = _structPimApiClient.Products.GetProductAttributeValues(product.Id, true).Values;
+            var productClassificationsModels = _structPimApiClient.Products.GetProductClassifications(product.Id);
             var allAttributes = _structAttributeRepository.GetAllAttributes().ToDictionary(x => x.Alias);
 
             var productAttributes = new Dictionary<Attribute, dynamic>();
@@ -100,6 +102,8 @@ namespace Enterspeed.Integration.Struct.Services
                     output[property.Key] = property.Value;
                 }
             }
+
+            output["classifications"] = GetProperties(productClassificationsModels, culture);
 
             output["metaData"] = CreateMetaData(product, culture);
 
@@ -185,6 +189,23 @@ namespace Enterspeed.Integration.Struct.Services
             };
 
             return new ObjectEnterspeedProperty("metaData", metaData);
+        }
+
+        public IEnterspeedProperty GetProperties(List<ProductClassificationModel> productClassifications, string culture)
+        {
+            var classifications = productClassifications
+                .Select(x =>
+                        new ObjectEnterspeedProperty(new Dictionary<string, IEnterspeedProperty>
+                            {
+                                { "id", new StringEnterspeedProperty(_entityIdentityService.GetCategoryId(x.CategoryId, culture)) },
+                                { "isPrimary", new BooleanEnterspeedProperty(x.IsPrimary) },
+                                { "sortOrder", new NumberEnterspeedProperty(x.SortOrder ?? 0) },
+                                { "ownerReference", new StringEnterspeedProperty(x.OwnerReference) }
+                            }
+                        ))
+                .ToArray<IEnterspeedProperty>();
+
+            return new ArrayEnterspeedProperty("classifications", classifications);
         }
 
         private IEnterspeedProperty CreateMetaData(VariantModel variant, string culture)

@@ -29,3 +29,8 @@ You can seed data by making a GET request to one of the following endpoints:
 - `/api/SeedCategories`
 - `/api/SeedVariants`
 - `/api/SeedProducts`
+
+## Known missing features
+
+- Make Attributes to camelCase
+- Attribute values are loaded twice for products and maybe other types as well (`ProductEnterspeedIngestService` and `EnterspeedPropertyService`)
